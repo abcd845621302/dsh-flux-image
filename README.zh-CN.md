@@ -1,10 +1,13 @@
 # dsh-flux-image
 
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
 给 **[DeepSeek Harness](https://github.com/deepseek-ai)**（DSH）添加本地 FLUX 文生图 / 参考图编辑能力，并在本地大模型与 ComfyUI 之间**自动分时复用显存**。
 
-[English](README.md) | [MIT 许可证](LICENSE)
-
-![Preview](docs/preview.png)
+[English](README.md) | [MIT 许可证](LICENSE) | [贡献指南](CONTRIBUTING.md)
 
 ---
 
