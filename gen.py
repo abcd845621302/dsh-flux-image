@@ -576,10 +576,13 @@ def generate(wf, prompt, width, height, steps, seed, out, timeout,
             except Exception as e:
                 log(f"[warn] 关闭 ComfyUI 失败: {e}")
         if unloaded:
-            if spawn_strata_reload(strata["base"]):
-                log(f"[info] 已在后台重载本地模型 {strata['name']}（不阻塞图片返回）")
-            else:
-                log("[critical] 后台重载启动失败，请手动重载本地模型")
+            # 同步重载：部分宿主（如 DSH 插件沙箱）会终止后台子进程，
+            # 因此这里等待重载完成，保证出图后本地模型一定恢复。
+            try:
+                strata_action(strata, "load")
+                log(f"[info] 已重载本地模型 {strata['name']}")
+            except Exception as e:
+                log(f"[critical] 本地模型重载失败，请手动重载; 原因: {e}")
 
 
 def main():
