@@ -4,6 +4,8 @@ A local FLUX text-to-image / reference-image editing tool for **[DeepSeek Harnes
 
 [中文文档](README.zh-CN.md) | [MIT License](LICENSE)
 
+![Preview](docs/preview.png)
+
 ---
 
 ## Overview
