@@ -23,6 +23,7 @@ jobs:
           python -c "import json; json.load(open('flux_dev_fp8_api.json')); print('flux_dev_fp8_api.json OK')"
           python -c "import json; json.load(open('flux_kontext_gguf_api.json')); print('flux_kontext_gguf_api.json OK')"
           python -c "import json; json.load(open('local_models.json')); print('local_models.json OK')"
+          python -c "import json; json.load(open('sdxl_api.json')); print('sdxl_api.json OK')"
       - name: Check plugin JS syntax
         run: node --check flux-image-plugin/dsh/index.js
       - name: Check README files exist
