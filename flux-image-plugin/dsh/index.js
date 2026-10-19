@@ -167,6 +167,9 @@ export function apply(ctx, _config = {}) {
       const critical = extractCritical(stdout);
 
       if (code !== 0) {
+        // The render failed after gen.py may already have unloaded the local LLM.
+        // Restore it from this long-lived process before reporting the error.
+        triggerLocalReload();
         const base = (stderr || stdout).trim().slice(0, 800);
         throw new Error(
           critical
