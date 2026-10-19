@@ -118,6 +118,56 @@ generate_image(image="D:/refs/character.jpg",
                prompt="turn the reference into a clean app icon, keep the hair and outfit, no text")
 ```
 
+## 动态模型与分流
+
+### 带参考图
+
+`generate_image(prompt, image="...")` 走 **Kontext** 参考图工作流。模型解析顺序：
+`FLUX_KONTEXT_MODEL` 环境变量 → 扫描 `models/diffusion_models` 中文件名含 `kontext` 的模型。
+
+### 不带参考图（文生图）
+
+解析顺序：
+
+1. `text2img.json`，其次环境变量（`FLUX_TEXT2IMG_MODEL`、`FLUX_TEXT2IMG_WORKFLOW` 等）；
+2. 自动识别：`models/diffusion_models` 里的文件 → **FLUX** 工作流；`models/checkpoints` 里的文件 → **SDXL / SD1.5** 工作流（`sdxl_api.json`）；
+3. 默认：优先 Krea，其次任意 FLUX，再其次 SDXL / SD1.5。
+
+### text2img.json（可选）
+
+仓库提供 `text2img.json.example`，复制为 `text2img.json` 后按需修改：
+
+```json
+{
+  "model": "sd_xl_base_1.0.safetensors",
+  "workflow": "sdxl_api.json",
+  "steps": 25,
+  "cfg": 7.0,
+  "sampler": "dpmpp_2m",
+  "scheduler": "karras",
+  "size": "1024x1024"
+}
+```
+
+### 工作流要求
+
+工作流必须是 ComfyUI 的 **API 格式** JSON。插件会注入模型名、prompt、尺寸、步数、seed（以及配置里的 CFG/采样器/调度器）。FLUX 工作流使用 `UNETLoader` / `UnetLoaderGGUF`；SDXL / SD1.5 工作流使用 `CheckpointLoaderSimple`。模型与工作流不匹配时会给出明确报错。
+
+| 模式 | 需要的 ComfyUI 节点 |
+|---|---|
+| FLUX 文生图 | `UNETLoader`（safetensors）或 `UnetLoaderGGUF`（GGUF，需 **ComfyUI-GGUF**） |
+| SDXL / SD1.5 | `CheckpointLoaderSimple` |
+| Kontext | `FluxKontextImageScale`、`ReferenceLatent`（GGUF 模型还需 `UnetLoaderGGUF`） |
+
+### 模型目录
+
+| 模型类型 | 目录 |
+|---|---|
+| FLUX（UNET / GGUF） | `ComfyUI/models/diffusion_models` |
+| SDXL / SD1.5 checkpoint | `ComfyUI/models/checkpoints` |
+
+若本地模型无法卸载，插件会中止出图而不是冒显存不足（OOM）的风险。自动识别依赖文件名/目录（`sdxl`、`sd15`），不确定时请用 `text2img.json` 指定。
+
 ## 配置
 
 ### 动态探测顺序
@@ -170,6 +220,8 @@ ComfyUI 本身**故意不**放在这里——它由 `gen.py` 负责管理。
 ├── reload_strata.py               # 插件触发的本地模型后台重载
 ├── flux_dev_fp8_api.json          # 文生图工作流（ComfyUI API 格式）
 ├── flux_kontext_gguf_api.json     # Kontext 参考图工作流（ComfyUI API 格式）
+├── sdxl_api.json                  # SDXL / SD1.5 checkpoint 工作流（ComfyUI API 格式）
+├── text2img.json.example          # 模型/工作流覆盖的示例配置
 ├── README.md                      # 英文文档
 ├── README.zh-CN.md                # 中文文档
 ├── LICENSE                        # MIT
