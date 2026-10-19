@@ -169,6 +169,7 @@ ComfyUI itself is intentionally **not** listed here — it is managed by `gen.py
 .
 ├── gen.py                         # renderer: detection + VRAM timesharing + ComfyUI calls
 ├── local_models.json              # local LLM service list (health / unload / load)
+├── reload_strata.py               # plugin-triggered background reload of the local LLM
 ├── flux_dev_fp8_api.json          # text-to-image workflow (ComfyUI API format)
 ├── flux_kontext_gguf_api.json     # Kontext reference workflow (ComfyUI API format)
 ├── README.md                      # English docs
@@ -189,7 +190,7 @@ ComfyUI itself is intentionally **not** listed here — it is managed by `gen.py
 | `ComfyUI 启动超时` / `Cannot connect to ComfyUI` | Check `COMFYUI_DIR`; make sure `python_embeded\python.exe` exists |
 | HTTP 400 `prompt_outputs_failed_validation` | The workflow references a model that is not in ComfyUI `models/` — check the model files |
 | Local LLM stays unloaded after rendering | The plugin-triggered reload failed; check that `reload_strata.py` can run, or call `POST http://127.0.0.1:8085/v1/load` manually |
-| Browser page opens too often | It opens at most once per 20 minutes and only when no ComfyUI browser window is detected; set/clear `FLUX_OPEN_UI` if needed |
+| Browser page opens too often | It opens at most once per 20 minutes and only when no ComfyUI browser window is detected; set `FLUX_OPEN_UI=1` to force it |
 | No console window visible | The ComfyUI console window appears per render and closes when rendering ends |
 
 ## Disclaimer
