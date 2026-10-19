@@ -715,38 +715,6 @@ def llm_action(llm, action, retries=30, wait=2.0):
     raise RuntimeError(f"{llm.get('name')} {action} 连续 busy")
 
 
-def spawn_strata_reload(base):
-    """在独立后台进程里重载本地模型，不阻塞图片返回。成功启动返回 True。"""
-    code = (
-        "import sys,time,json,urllib.request\n"
-        "base=sys.argv[1]\n"
-        "for _ in range(80):\n"
-        "    try:\n"
-        "        req=urllib.request.Request(base+'/v1/load',data=b'{}',headers={'Content-Type':'application/json'})\n"
-        "        r=urllib.request.urlopen(req,timeout=300)\n"
-        "        print('reload ok',json.load(r).get('status'),flush=True)\n"
-        "        sys.exit(0)\n"
-        "    except Exception as e:\n"
-        "        time.sleep(3)\n"
-        "sys.exit(1)\n"
-    )
-    flags = 0
-    if os.name == "nt":
-        flags = 0x00000008 | 0x08000000   # DETACHED_PROCESS | CREATE_NO_WINDOW
-    try:
-        subprocess.Popen(
-            [sys.executable, "-c", code, base],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            creationflags=flags,
-            close_fds=True,
-        )
-        return True
-    except Exception as e:
-        log(f"[warn] 后台重载进程启动失败: {e}")
-        return False
-
-
 def generate(wf, prompt, width, height, steps, seed, out, timeout,
              comfy_base, comfy_dir, dirs, models, llm, started_proc, unloaded=False,
              no_reload=False):
