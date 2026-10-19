@@ -1,0 +1,11 @@
+{
+  "_comment": "本地大模型服务清单。gen.py 出图前会遍历 services：对每项 GET health 判断 loaded，loaded 的先后执行 unload 腾出显存，出图完成后再 load 回来。未来接入新的本地大模型，只需在此数组里再加一项（填它的 health/unload/load 地址）。文生图模型（ComfyUI）不在此清单，天然不参与卸载。",
+  "services": [
+    {
+      "name": "qian-wen",
+      "health": { "url": "http://127.0.0.1:8085/health", "loaded_field": "loaded" },
+      "unload": { "url": "http://127.0.0.1:8085/v1/unload", "body": {} },
+      "load": { "url": "http://127.0.0.1:8085/v1/load", "body": {} }
+    }
+  ]
+}
