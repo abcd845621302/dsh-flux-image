@@ -16,8 +16,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Compile gen.py
-        run: python -m py_compile gen.py
+      - name: Compile Python scripts
+        run: python -m py_compile gen.py reload_strata.py
       - name: Validate workflow JSON
         run: |
           python -c "import json; json.load(open('flux_dev_fp8_api.json')); print('flux_dev_fp8_api.json OK')"
