@@ -16,7 +16,7 @@
 
 ## 简介
 
-`dsh-flux-image` 在 DSH 中注册一个 `generate_image` 工具，通过本地 **ComfyUI** 驱动 **FLUX.1** 模型出图。出图前自动卸载占显存的本地大模型（如 Strata 上的 Qwen），出图后再用**独立后台进程**自动重载，图片结果立即返回。
+`dsh-flux-image` 在 DSH 中注册一个 `generate_image` 工具，通过本地 **ComfyUI** 驱动 **FLUX.1** 模型出图。出图前自动卸载占显存的本地大模型（如 Strata 上的 Qwen），出图后由**插件进程**自动重载（图片先返回，模型在后台恢复）。
 
 适用于「本地大模型与图像模型无法同时驻留显存」的机器——例如 12GB 显卡上运行 75GB MoE 大模型 + 12B FLUX 模型。
 
@@ -29,7 +29,7 @@
 | **文生图** | FLUX.1 Krea dev（ComfyUI，默认 25 步） |
 | **参考图编辑** | FLUX.1 Kontext dev（GGUF / safetensors 均可），保持角色一致性 |
 | **加速模式** | FLUX Turbo / Lightning LoRA，8 步采样（约为常规耗时的 20%，画质略有损失） |
-| **显存分时** | 自动卸载已加载的本地大模型（`POST /v1/unload`），出图后由**独立后台进程**重载（`POST /v1/load`），不阻塞图片返回 |
+| **显存分时** | 自动卸载已加载的本地大模型（`POST /v1/unload`），出图后由**插件进程**重载（`POST /v1/load`），图片先返回 |
 | **全动态探测** | 工作区、ComfyUI 目录/端口、模型文件、本地模型服务地址全部自动识别，环境变量可覆盖 |
 | **自动界面** | 首次出图自动打开 ComfyUI 页面（窗口标题检测 + 20 分钟节流）；出图结束自动关闭本次启动的 ComfyUI 释放显存 |
 | **干净收尾** | 不残留 ComfyUI 进程；可选显示 ComfyUI 控制台窗口查看加载/采样日志 |
@@ -51,7 +51,7 @@
     5. ComfyUI 未运行则启动（可写目录重定向到工作区）
     6. 提交工作流、轮询 /history、下载 PNG 到 <工作区>/flux_images/
     7. /free 释放 ComfyUI → 关闭本次自动启动的 ComfyUI
-    8. 启动独立后台进程 POST /v1/load 重载本地大模型（不阻塞返回）
+    8. 插件（index.js）启动 reload_strata.py 执行 POST /v1/load —— 图片先返回，模型在后台恢复
         │
         ▼
   返回图片的绝对路径
@@ -186,7 +186,7 @@ ComfyUI 本身**故意不**放在这里——它由 `gen.py` 负责管理。
 |---|---|
 | `ComfyUI 启动超时` / 连接失败 | 检查 `COMFYUI_DIR`，确认 `python_embeded\python.exe` 存在 |
 | HTTP 400 `prompt_outputs_failed_validation` | 工作流引用的模型不在 ComfyUI `models/` 中——检查模型文件 |
-| 出图后本地模型一直未加载 | 后台重载失败；手动 `POST http://127.0.0.1:8085/v1/load` 即可 |
+| 出图后本地模型一直未加载 | 插件触发的重载失败；检查 `reload_strata.py` 是否可运行，或手动 `POST http://127.0.0.1:8085/v1/load` |
 | 浏览器页面打开太频繁 | 每 20 分钟最多自动打开一次，且检测到已有 ComfyUI 页面时跳过；可用 `FLUX_OPEN_UI` 强制 |
 | 看不到控制台窗口 | ComfyUI 控制台窗口每轮出图出现一次，出图结束随进程关闭 |
 
