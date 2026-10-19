@@ -46,7 +46,7 @@
   gen.py
     1. 探测 DSH 工作区（DSH_WORKSPACE → workspace.json + DSH_SESSION_ID → 默认工作区 → cwd）
     2. 探测 ComfyUI 安装目录/端口，扫描模型（Kontext / Krea / CLIP / VAE / LoRA）
-    3. 探测本地大模型服务（STRATA_URL / local_models.json / 常见端口，校验 service=strata）
+    3. 探测本地大模型服务（STRATA_URL / local_models.json —— 任意 health/unload/load 接口 / 常见端口上的 Strata 兼容服务）
     4. 若本地大模型已加载 → POST /v1/unload 腾显存
     5. ComfyUI 未运行则启动（可写目录重定向到工作区）
     6. 提交工作流、轮询 /history、下载 PNG 到 <工作区>/flux_images/
@@ -178,7 +178,7 @@ generate_image(image="D:/refs/character.jpg",
 | ComfyUI 目录 | `COMFYUI_DIR` → 常见安装路径（`D:\Flux\comfyui\ComfyUI_windows_portable` 等） |
 | ComfyUI 端口 | `COMFYUI_PORT`（默认 `8188`） |
 | 模型 | 扫描 `models/diffusion_models`（kontext/krea）、`models/text_encoders`（clip_l/t5xxl）、`models/vae`、`models/loras`（turbo/lightning） |
-| 本地模型服务 | `STRATA_URL` / `STRATA_PORT` → `local_models.json` → 常见端口扫描（校验 `"service": "strata"`） |
+| 本地模型服务 | `STRATA_URL` / `STRATA_PORT` → `local_models.json` 中的服务（任意 health/unload/load 接口）→ 常见端口上的 Strata 兼容服务扫描 |
 | 可写目录 | `<工作区>/flux_comfy/{input,output,temp,user}` |
 
 ### 环境变量
@@ -192,22 +192,38 @@ generate_image(image="D:/refs/character.jpg",
 | `STRATA_URL` / `STRATA_PORT` | 本地大模型服务地址 / 端口 |
 | `FLUX_OPEN_UI` | 设为 `1` 强制每次出图都打开 ComfyUI 页面 |
 
-### `local_models.json`
+### `local_models.json`（任意本地 LLM）
 
-列出参与显存分时的本地大模型服务：
+显存分时支持**任意本地 LLM 服务**——在清单里声明它的 health/unload/load 接口即可：
 
 ```json
 {
   "services": [
     {
-      "name": "qian-wen",
-      "health": { "url": "http://127.0.0.1:8085/health", "loaded_field": "loaded" },
+      "name": "my-llm",
+      "health": { "url": "http://127.0.0.1:8000/health", "loaded_field": "loaded" },
+      "unload": { "url": "http://127.0.0.1:8000/unload", "body": {} },
+      "load":   { "url": "http://127.0.0.1:8000/load",   "body": {} }
+    },
+    {
+      "name": "strata",
+      "health": {
+        "url": "http://127.0.0.1:8085/health",
+        "loaded_field": "loaded",
+        "service_field": "service",
+        "service_value": "strata"
+      },
       "unload": { "url": "http://127.0.0.1:8085/v1/unload", "body": {} },
       "load":   { "url": "http://127.0.0.1:8085/v1/load",   "body": {} }
     }
   ]
 }
 ```
+
+- `health.loaded_field`：表示模型是否已加载的 JSON 字段（默认 `loaded`）；
+- 可选 `health.service_field` / `service_value`：额外校验（如 `"service": "strata"`）；
+- `unload` / `load`：任意 POST 接口；返回 `busy` 或 HTTP 409/503 时会重试；
+- 没有此文件（或都探测不到）时，回退到 Strata 默认 `127.0.0.1:8085`。
 
 ComfyUI 本身**故意不**放在这里——它由 `gen.py` 负责管理。
 
