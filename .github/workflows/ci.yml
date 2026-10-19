@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile gen.py
+        run: python -m py_compile gen.py
+      - name: Validate workflow JSON
+        run: |
+          python -c "import json; json.load(open('flux_dev_fp8_api.json')); print('flux_dev_fp8_api.json OK')"
+          python -c "import json; json.load(open('flux_kontext_gguf_api.json')); print('flux_kontext_gguf_api.json OK')"
+          python -c "import json; json.load(open('local_models.json')); print('local_models.json OK')"
+      - name: Check plugin JS syntax
+        run: node --check flux-image-plugin/dsh/index.js
+      - name: Check README files exist
+        run: test -f README.md && test -f README.zh-CN.md
