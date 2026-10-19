@@ -31,7 +31,10 @@ function findPluginRoot() {
       return cand;
     }
   }
-  return 'D:/QianWen3.8/ImagePlugin/plugin';
+  // Nothing found: the plugin was installed as a copy and no gen.py is nearby.
+  // Point FLUX_IMAGE_PLUGIN_DIR at the folder that owns gen.py, or copy gen.py,
+  // the workflow JSONs and local_models.json next to this plugin package.
+  return '';
 }
 const WORKSPACE = findPluginRoot();
 const GEN_PY = join(WORKSPACE, 'gen.py');
@@ -131,7 +134,12 @@ export function apply(ctx, _config = {}) {
       const image = typeof args?.image === 'string' ? args.image.trim() : '';
 
       if (!existsSync(GEN_PY)) {
-        throw new Error(`找不到 gen.py: ${GEN_PY}`);
+        throw new Error(
+          `找不到 gen.py: ${GEN_PY || '(插件目录未确定)'}。` +
+            '请设置环境变量 FLUX_IMAGE_PLUGIN_DIR 指向包含 gen.py 的目录，' +
+            '或把 gen.py、flux_dev_fp8_api.json、flux_kontext_gguf_api.json、local_models.json ' +
+            '复制到本插件包目录。',
+        );
       }
       if (image && !existsSync(image)) {
         throw new Error(`参考图不存在: ${image}`);
