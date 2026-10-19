@@ -1,0 +1,66 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill in the details below
+        (redact tokens, personal paths and anything private).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+      placeholder: "generate_image returned ... / ComfyUI was not started / ..."
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: The exact call and configuration you used.
+      placeholder: |
+        1. Call generate_image(prompt="...", accelerate=true)
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / error output
+      description: Paste the full error output (redact tokens and personal paths).
+      render: shell
+    validations:
+      required: false
+  - type: input
+    id: os
+    attributes:
+      label: OS and GPU
+      placeholder: "Windows 11, RTX 4070 12GB"
+    validations:
+      required: true
+  - type: input
+    id: comfy
+    attributes:
+      label: ComfyUI version and models
+      placeholder: "ComfyUI 0.4x.x; flux1-krea-dev_fp8_scaled + flux1-kontext-dev-Q6_K.gguf"
+    validations:
+      required: true
+  - type: input
+    id: dsh
+    attributes:
+      label: DSH version
+      placeholder: "e.g. 0.9.x"
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and did not find a duplicate
+          required: true
+        - label: I removed tokens / personal paths from the logs
+          required: true
