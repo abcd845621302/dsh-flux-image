@@ -1,7 +1,7 @@
 {
   "name": "dsh-flux-image",
   "version": "0.1.0",
-  "description": "Local FLUX.1 text-to-image tool for DeepSeek Harness — timeshares VRAM with configured local LLMs via gen.py + local_models.json",
+  "description": "Local FLUX.1 text-to-image / reference-image editing tool for DeepSeek Harness — timeshares VRAM with configured local LLMs via gen.py + local_models.json",
   "type": "module",
   "exports": {
     ".": "./dsh/index.js",
@@ -17,5 +17,24 @@
     "dsh",
     "cordis.patch.yml"
   ],
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "flux",
+    "comfyui",
+    "text-to-image",
+    "image-editing",
+    "kontext",
+    "vram",
+    "plugin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abcd845621302/dsh-flux-image.git"
+  },
+  "homepage": "https://github.com/abcd845621302/dsh-flux-image#readme",
+  "bugs": {
+    "url": "https://github.com/abcd845621302/dsh-flux-image/issues"
+  },
   "license": "MIT"
 }
