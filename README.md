@@ -3,6 +3,7 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)
+[![CI](https://github.com/abcd845621302/dsh-flux-image/actions/workflows/ci.yml/badge.svg)](https://github.com/abcd845621302/dsh-flux-image/actions/workflows/ci.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 A local FLUX text-to-image / reference-image editing tool for **[DeepSeek Harness](https://github.com/deepseek-ai)** (DSH), with automatic VRAM timesharing between local LLMs and ComfyUI.
@@ -60,6 +61,7 @@ Model call: generate_image(prompt, image?, accelerate?, size?, steps?, seed?)
 
 | Requirement | Notes |
 |---|---|
+| **Operating system** | **Windows 10/11** — `gen.py` uses `taskkill`, `CREATE_NEW_CONSOLE` and the Windows API for window detection |
 | **Python 3** | Invoked as `py` by default; override with `FLUX_IMAGE_PY` |
 | **ComfyUI** | Windows portable build containing `ComfyUI/main.py` and `python_embeded/python.exe` |
 | **FLUX models** | In ComfyUI `models/diffusion_models`: Krea (text-to-image) and/or Kontext (reference editing) |
