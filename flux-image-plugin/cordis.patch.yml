@@ -1,0 +1,6 @@
+# dsh bundle layer: mount the flux-image plugin (dsh/index.js via the package
+# root export). The tool is a thin wrapper around the workspace's gen.py, which
+# itself reads local_models.json to timeshare VRAM with local LLMs.
+- insert:
+    - id: flux-image
+      name: 'dsh-flux-image'
