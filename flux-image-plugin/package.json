@@ -1,0 +1,21 @@
+{
+  "name": "dsh-flux-image",
+  "version": "0.1.0",
+  "description": "Local FLUX.1 text-to-image tool for DeepSeek Harness — timeshares VRAM with configured local LLMs via gen.py + local_models.json",
+  "type": "module",
+  "exports": {
+    ".": "./dsh/index.js",
+    "./dsh": "./dsh/index.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "files": [
+    "dsh",
+    "cordis.patch.yml"
+  ],
+  "license": "MIT"
+}
