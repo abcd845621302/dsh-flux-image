@@ -3,13 +3,14 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)
+[![CI](https://github.com/abcd845621302/dsh-flux-image/actions/workflows/ci.yml/badge.svg)](https://github.com/abcd845621302/dsh-flux-image/actions/workflows/ci.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 给 **[DeepSeek Harness](https://github.com/deepseek-ai)**（DSH）添加本地 FLUX 文生图 / 参考图编辑能力，并在本地大模型与 ComfyUI 之间**自动分时复用显存**。
 
 [English](README.md) | [MIT 许可证](LICENSE) | [贡献指南](CONTRIBUTING.md)
 
-![Preview](docs/preview.png)
+![预览图](docs/preview.png)
 
 ---
 
@@ -60,6 +61,7 @@
 
 | 依赖 | 说明 |
 |---|---|
+| **操作系统** | **Windows 10/11** —— `gen.py` 使用了 `taskkill`、`CREATE_NEW_CONSOLE` 和 Windows 窗口检测 API |
 | **Python 3** | 默认用 `py` 启动，可用 `FLUX_IMAGE_PY` 覆盖 |
 | **ComfyUI** | Windows 便携版（含 `ComfyUI/main.py` 与 `python_embeded/python.exe`） |
 | **FLUX 模型** | 放在 ComfyUI 的 `models/diffusion_models`：Krea（文生图）和/或 Kontext（参考图） |
