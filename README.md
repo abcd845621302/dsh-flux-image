@@ -1,10 +1,13 @@
 # dsh-flux-image
 
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
 A local FLUX text-to-image / reference-image editing tool for **[DeepSeek Harness](https://github.com/deepseek-ai)** (DSH), with automatic VRAM timesharing between local LLMs and ComfyUI.
 
-[中文文档](README.zh-CN.md) | [MIT License](LICENSE)
-
-![Preview](docs/preview.png)
+[中文文档](README.zh-CN.md) | [MIT License](LICENSE) | [Contributing](CONTRIBUTING.md)
 
 ---
 
