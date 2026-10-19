@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest an improvement or new capability
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion! Please describe the problem and your proposed solution.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: What are you trying to do that the plugin does not support yet?
+      placeholder: "I want to batch-edit icons with different reference images ..."
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How would you like it to work? API / parameter names / config changes.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any workarounds you use today.
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - gen.py (renderer / VRAM timesharing)
+        - DSH plugin (index.js)
+        - Workflows (ComfyUI JSON)
+        - Documentation
+        - Other
+    validations:
+      required: true
