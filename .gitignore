@@ -7,6 +7,9 @@ __pycache__/
 *.log
 *.tmp
 
+# 本地配置（示例见 text2img.json.example）
+text2img.json
+
 # 凭据（切勿提交）
 .gh_token
 *.token
