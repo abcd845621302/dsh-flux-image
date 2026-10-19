@@ -46,7 +46,7 @@ Model call: generate_image(prompt, image?, accelerate?, size?, steps?, seed?)
   gen.py
     1. detect DSH workspace (DSH_WORKSPACE → workspace.json + DSH_SESSION_ID → default → cwd)
     2. detect ComfyUI install dir / port, scan models (Kontext / Krea / CLIP / VAE / LoRA)
-    3. detect local LLM service (STRATA_URL / local_models.json / common ports, verified by service=strata)
+    3. detect local LLM service (STRATA_URL / local_models.json — any health/unload/load URLs / common ports for Strata-compatible services)
     4. if the local LLM is loaded → POST /v1/unload
     5. start ComfyUI if not running (writable dirs redirected into the workspace)
     6. submit the workflow, poll /history, download the PNG to <workspace>/flux_images/
@@ -180,7 +180,7 @@ If the local LLM cannot be unloaded, rendering is aborted instead of risking an 
 | ComfyUI directory | `COMFYUI_DIR` → common install paths (`D:\Flux\comfyui\ComfyUI_windows_portable`, …) |
 | ComfyUI port | `COMFYUI_PORT` (default `8188`) |
 | Models | Scans `models/diffusion_models` (kontext/krea), `models/text_encoders` (clip_l/t5xxl), `models/vae`, `models/loras` (turbo/lightning) |
-| Local LLM service | `STRATA_URL` / `STRATA_PORT` → `local_models.json` → common-port scan (verified by `"service": "strata"`) |
+| Local LLM service | `STRATA_URL` / `STRATA_PORT` → `local_models.json` services (any health/unload/load URLs) → common-port scan for Strata-compatible services |
 | Writable dirs | `<workspace>/flux_comfy/{input,output,temp,user}` |
 
 ### Environment variables
@@ -194,22 +194,38 @@ If the local LLM cannot be unloaded, rendering is aborted instead of risking an 
 | `STRATA_URL` / `STRATA_PORT` | Local LLM service URL / port |
 | `FLUX_OPEN_UI` | Set to `1` to force opening the ComfyUI page on every render |
 
-### `local_models.json`
+### `local_models.json` (any local LLM)
 
-Lists local LLM services that participate in VRAM timesharing:
+VRAM timesharing works with **any local LLM server** — declare its health/unload/load endpoints here:
 
 ```json
 {
   "services": [
     {
-      "name": "qian-wen",
-      "health": { "url": "http://127.0.0.1:8085/health", "loaded_field": "loaded" },
+      "name": "my-llm",
+      "health": { "url": "http://127.0.0.1:8000/health", "loaded_field": "loaded" },
+      "unload": { "url": "http://127.0.0.1:8000/unload", "body": {} },
+      "load":   { "url": "http://127.0.0.1:8000/load",   "body": {} }
+    },
+    {
+      "name": "strata",
+      "health": {
+        "url": "http://127.0.0.1:8085/health",
+        "loaded_field": "loaded",
+        "service_field": "service",
+        "service_value": "strata"
+      },
       "unload": { "url": "http://127.0.0.1:8085/v1/unload", "body": {} },
       "load":   { "url": "http://127.0.0.1:8085/v1/load",   "body": {} }
     }
   ]
 }
 ```
+
+- `health.loaded_field` — JSON field telling whether the model is loaded (default `loaded`);
+- optional `health.service_field` / `service_value` — extra validation (e.g. `"service": "strata"`);
+- `unload` / `load` — any POST endpoint; a `busy` status or HTTP 409/503 is retried;
+- without this file (or when nothing responds), the plugin falls back to Strata on `127.0.0.1:8085`.
 
 ComfyUI itself is intentionally **not** listed here — it is managed by `gen.py`.
 
