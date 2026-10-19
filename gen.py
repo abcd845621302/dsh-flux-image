@@ -524,7 +524,8 @@ def spawn_strata_reload(base):
 
 
 def generate(wf, prompt, width, height, steps, seed, out, timeout,
-             comfy_base, comfy_dir, dirs, models, strata, started_proc, unloaded=False):
+             comfy_base, comfy_dir, dirs, models, strata, started_proc, unloaded=False,
+             no_reload=False):
     if seed is None:
         seed = random.randint(0, 2**31 - 1)
     seed = int(seed)
@@ -576,13 +577,16 @@ def generate(wf, prompt, width, height, steps, seed, out, timeout,
             except Exception as e:
                 log(f"[warn] 关闭 ComfyUI 失败: {e}")
         if unloaded:
-            # 同步重载：部分宿主（如 DSH 插件沙箱）会终止后台子进程，
-            # 因此这里等待重载完成，保证出图后本地模型一定恢复。
-            try:
-                strata_action(strata, "load")
-                log(f"[info] 已重载本地模型 {strata['name']}")
-            except Exception as e:
-                log(f"[critical] 本地模型重载失败，请手动重载; 原因: {e}")
+            if no_reload:
+                log("[info] 跳过本地模型重载（由调用方负责）")
+            else:
+                # 同步重载：部分宿主（如 DSH 插件沙箱）会终止后台子进程，
+                # 因此这里等待重载完成，保证出图后本地模型一定恢复。
+                try:
+                    strata_action(strata, "load")
+                    log(f"[info] 已重载本地模型 {strata['name']}")
+                except Exception as e:
+                    log(f"[critical] 本地模型重载失败，请手动重载; 原因: {e}")
 
 
 def main():
@@ -598,6 +602,7 @@ def main():
     ap.add_argument("--workflow-kontext", default=str(here / "flux_kontext_gguf_api.json"))
     ap.add_argument("--init-image", default=None)
     ap.add_argument("--accelerate", action="store_true")
+    ap.add_argument("--no-reload", action="store_true", help="跳过本地模型重载（由调用方负责）")
     a = ap.parse_args()
     seed = a.seed if a.seed is not None else random.randint(0, 2**31 - 1)
 
@@ -667,7 +672,7 @@ def main():
         out = a.out or str(pathlib.Path(workspace) / "flux_images" / f"flux_{ts}.png")
         out_path = generate(wf, a.prompt, 0, 0, steps, seed, out, a.timeout,
                             comfy_base, comfy_dir, dirs, models, strata, started_proc,
-                            unloaded=unloaded)
+                            unloaded=unloaded, no_reload=a.no_reload)
     finally:
         if started_proc is not None and started_proc.poll() is None:
             # 出图中途异常时也关闭启动的 ComfyUI
