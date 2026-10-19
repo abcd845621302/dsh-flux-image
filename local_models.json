@@ -1,9 +1,14 @@
 {
-  "_comment": "本地大模型服务清单。gen.py 出图前会遍历 services：对每项 GET health 判断 loaded，loaded 的先后执行 unload 腾出显存，出图完成后再 load 回来。未来接入新的本地大模型，只需在此数组里再加一项（填它的 health/unload/load 地址）。文生图模型（ComfyUI）不在此清单，天然不参与卸载。",
+  "_comment": "本地大模型服务清单（通用分时）。gen.py 按顺序探测每个服务的 health；命中后调用该服务的 unload/load URL 完成显存分时。支持任意本地 LLM 服务（vLLM、Ollama、LM Studio、Strata 等），只需提供可用的 health/unload/load 接口。health.loaded_field 默认 loaded；可选 service_field/service_value 做服务校验。没有本文件或探测不到时，默认回退到 Strata (127.0.0.1:8085)。",
   "services": [
     {
-      "name": "qian-wen",
-      "health": { "url": "http://127.0.0.1:8085/health", "loaded_field": "loaded" },
+      "name": "strata",
+      "health": {
+        "url": "http://127.0.0.1:8085/health",
+        "loaded_field": "loaded",
+        "service_field": "service",
+        "service_value": "strata"
+      },
       "unload": { "url": "http://127.0.0.1:8085/v1/unload", "body": {} },
       "load": { "url": "http://127.0.0.1:8085/v1/load", "body": {} }
     }
