@@ -1,0 +1,10 @@
+{
+  "_comment": "Copy to text2img.json and adjust. Optional: without this file the plugin auto-detects the model.",
+  "model": "sd_xl_base_1.0.safetensors",
+  "workflow": "sdxl_api.json",
+  "steps": 25,
+  "cfg": 7.0,
+  "sampler": "dpmpp_2m",
+  "scheduler": "karras",
+  "size": "1024x1024"
+}
