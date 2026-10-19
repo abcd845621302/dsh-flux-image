@@ -120,6 +120,56 @@ generate_image(image="D:/refs/character.jpg",
                prompt="turn the reference into a clean app icon, keep the hair and outfit, no text")
 ```
 
+## Model selection (dynamic)
+
+### With a reference image
+
+`generate_image(prompt, image="...")` uses the **Kontext** reference workflow. Model resolution:
+`FLUX_KONTEXT_MODEL` env → scan `models/diffusion_models` for a file containing `kontext`.
+
+### Without a reference image (text-to-image)
+
+Resolution order:
+
+1. `text2img.json`, then env vars (`FLUX_TEXT2IMG_MODEL`, `FLUX_TEXT2IMG_WORKFLOW`, …);
+2. auto-detect: files in `models/diffusion_models` → **FLUX** workflow; files in `models/checkpoints` → **SDXL / SD1.5** workflow (`sdxl_api.json`);
+3. default: Krea first, then any FLUX, then any SDXL, then any SD1.5.
+
+### text2img.json (optional)
+
+`text2img.json.example` is provided — copy it to `text2img.json` and adjust:
+
+```json
+{
+  "model": "sd_xl_base_1.0.safetensors",
+  "workflow": "sdxl_api.json",
+  "steps": 25,
+  "cfg": 7.0,
+  "sampler": "dpmpp_2m",
+  "scheduler": "karras",
+  "size": "1024x1024"
+}
+```
+
+### Workflow requirements
+
+The workflow must be a ComfyUI **API-format** JSON. The plugin injects the model, prompt, size, steps and seed (and CFG/sampler/scheduler from the config). FLUX workflows use `UNETLoader` / `UnetLoaderGGUF`; SDXL and SD1.5 workflows use `CheckpointLoaderSimple`. A mismatched model/workflow pair is rejected with a clear error.
+
+| Mode | Required ComfyUI nodes |
+|---|---|
+| FLUX text-to-image | `UNETLoader` (safetensors) or `UnetLoaderGGUF` (GGUF — needs **ComfyUI-GGUF**) |
+| SDXL / SD1.5 | `CheckpointLoaderSimple` |
+| Kontext | `FluxKontextImageScale`, `ReferenceLatent` (+ `UnetLoaderGGUF` for GGUF models) |
+
+### Model directories
+
+| Model type | Directory |
+|---|---|
+| FLUX (UNET / GGUF) | `ComfyUI/models/diffusion_models` |
+| SDXL / SD1.5 checkpoint | `ComfyUI/models/checkpoints` |
+
+If the local LLM cannot be unloaded, rendering is aborted instead of risking an OOM. Automatic detection relies on file names / directories (`sdxl`, `sd15`); use `text2img.json` when unsure.
+
 ## Configuration
 
 ### Dynamic discovery order
@@ -172,6 +222,8 @@ ComfyUI itself is intentionally **not** listed here — it is managed by `gen.py
 ├── reload_strata.py               # plugin-triggered background reload of the local LLM
 ├── flux_dev_fp8_api.json          # text-to-image workflow (ComfyUI API format)
 ├── flux_kontext_gguf_api.json     # Kontext reference workflow (ComfyUI API format)
+├── sdxl_api.json                  # SDXL / SD1.5 checkpoint workflow (ComfyUI API format)
+├── text2img.json.example          # example config for model/workflow override
 ├── README.md                      # English docs
 ├── README.zh-CN.md                # Chinese docs
 ├── LICENSE                        # MIT
