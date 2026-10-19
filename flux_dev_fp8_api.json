@@ -1,0 +1,128 @@
+{
+  "9": {
+    "inputs": {
+      "filename_prefix": "flux_krea",
+      "images": [
+        "200:198",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "保存图像"
+    }
+  },
+  "200:63": {
+    "inputs": {
+      "clip_name1": "clip_l.safetensors",
+      "clip_name2": "t5xxl_fp8_e4m3fn.safetensors",
+      "type": "flux",
+      "device": "default"
+    },
+    "class_type": "DualCLIPLoader",
+    "_meta": {
+      "title": "双CLIP加载器"
+    }
+  },
+  "200:64": {
+    "inputs": {
+      "vae_name": "ae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "加载VAE"
+    }
+  },
+  "200:65": {
+    "inputs": {
+      "unet_name": "flux1-krea-dev_fp8_scaled.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "UNet加载器"
+    }
+  },
+  "200:195": {
+    "inputs": {
+      "text": "A wide establishing shot from a high angle looking down from behind a large Eurasian eagle-owl in flight, flying away from the camera down the street, seen from behind with its wings spread wide and its back and tail feathers facing the camera, no face visible. The owl is not in close-up, medium-small in the frame. Below and stretching into the distance, a 1920s London street: cobblestone road, overhead telegraph wires, rows of Victorian and Edwardian brick terraced houses with chimneys, small old shops with hanging signs, gas street lamps, vintage 1920s automobiles, pedestrians in 1920s period clothing — men in flat caps and overcoats, women in long dresses and cloche hats — walking along the sidewalks. Early-morning light, soft golden sunrise glow, long shadows, light mist. Cinematic, photorealistic, high detail, wide distant view.",
+      "clip": [
+        "200:63",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP文本编码"
+    }
+  },
+  "200:196": {
+    "inputs": {
+      "width": 832,
+      "height": 1216,
+      "batch_size": 1
+    },
+    "class_type": "EmptySD3LatentImage",
+    "_meta": {
+      "title": "空Latent图像（SD3）"
+    }
+  },
+  "200:197": {
+    "inputs": {
+      "seed": 1899993356,
+      "steps": 30,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0,
+      "model": [
+        "200:65",
+        0
+      ],
+      "positive": [
+        "200:195",
+        0
+      ],
+      "negative": [
+        "200:199",
+        0
+      ],
+      "latent_image": [
+        "200:196",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "K采样器"
+    }
+  },
+  "200:198": {
+    "inputs": {
+      "samples": [
+        "200:197",
+        0
+      ],
+      "vae": [
+        "200:64",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE解码"
+    }
+  },
+  "200:199": {
+    "inputs": {
+      "conditioning": [
+        "200:195",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "条件零化"
+    }
+  }
+}
