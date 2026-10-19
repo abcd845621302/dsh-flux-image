@@ -334,35 +334,85 @@ def require_nodes(comfy_base, node_names, hint=""):
         )
 
 
-def detect_strata():
-    """返回 {"base": url, "name": model} 或 None。"""
-    cands = []
-    env_url = os.environ.get("STRATA_URL")
-    env_port = os.environ.get("STRATA_PORT")
-    if env_url:
-        cands.append(env_url.rstrip("/"))
-    if env_port:
-        cands.append(f"http://127.0.0.1:{env_port}")
-    here = pathlib.Path(__file__).resolve().parent
-    lm = here / "local_models.json"
+def load_services(here):
+    """读取 local_models.json 的 services 列表；没有则返回默认 Strata 配置。"""
+    lm = pathlib.Path(here) / "local_models.json"
     if lm.exists():
         try:
             data = json.loads(lm.read_text(encoding="utf-8"))
-            for svc in data.get("services") or []:
-                h = (svc.get("health") or {}).get("url")
-                if h:
-                    cands.append(h.rsplit("/health", 1)[0])
+            svcs = data.get("services")
+            if isinstance(svcs, list) and svcs:
+                return svcs
+            log("[warn] local_models.json 中 services 为空，使用默认 Strata 配置")
         except Exception as e:
-            log(f"[warn] 读取 local_models.json 失败: {e}")
+            log(f"[warn] 读取 local_models.json 失败(使用默认 Strata 配置): {e}")
+    return [{
+        "name": "strata",
+        "health": {"url": "http://127.0.0.1:8085/health", "loaded_field": "loaded",
+                   "service_field": "service", "service_value": "strata"},
+        "unload": {"url": "http://127.0.0.1:8085/v1/unload", "body": {}},
+        "load": {"url": "http://127.0.0.1:8085/v1/load", "body": {}},
+    }]
+
+
+def detect_llm(services):
+    """按 services 顺序探测本地大模型服务；返回可操作的服务描述或 None。
+
+    环境变量 STRATA_URL / STRATA_PORT 仍作为最高优先候选（兼容旧用法）；
+    都未命中时再按常见端口扫描 Strata 兼容服务。
+    """
+    cands = list(services)
+    env_url = os.environ.get("STRATA_URL")
+    env_port = os.environ.get("STRATA_PORT")
+    if env_url or env_port:
+        base = env_url.rstrip("/") if env_url else f"http://127.0.0.1:{env_port}"
+        cands.insert(0, {
+            "name": "strata(env)",
+            "health": {"url": f"{base}/health", "loaded_field": "loaded"},
+            "unload": {"url": f"{base}/v1/unload", "body": {}},
+            "load": {"url": f"{base}/v1/load", "body": {}},
+        })
+    for svc in cands:
+        h = svc.get("health") or {}
+        url = h.get("url")
+        if not url:
+            continue
+        try:
+            body = json.loads(get(url, timeout=2))
+        except Exception:
+            continue
+        sfield, svalue = h.get("service_field"), h.get("service_value")
+        if sfield and svalue and body.get(sfield) != svalue:
+            continue
+        lfield = h.get("loaded_field", "loaded")
+        if lfield not in body:
+            continue
+        unload = svc.get("unload") or {}
+        load = svc.get("load") or {}
+        return {
+            "name": svc.get("name") or url,
+            "health_url": url,
+            "loaded_field": lfield,
+            "unload_url": unload.get("url"),
+            "unload_body": unload.get("body") or {},
+            "load_url": load.get("url"),
+            "load_body": load.get("body") or {},
+        }
+    # 兜底：常见端口上的 Strata 兼容服务
     for p in DEFAULT_STRATA_PORTS:
         u = f"http://127.0.0.1:{p}"
-        if u not in cands:
-            cands.append(u)
-    for u in cands:
         try:
             body = json.loads(get(f"{u}/health", timeout=2))
             if body.get("service") == "strata" and body.get("model"):
-                return {"base": u, "name": body.get("model")}
+                return {
+                    "name": f"strata@{p}",
+                    "health_url": f"{u}/health",
+                    "loaded_field": "loaded",
+                    "unload_url": f"{u}/v1/unload",
+                    "unload_body": {},
+                    "load_url": f"{u}/v1/load",
+                    "load_body": {},
+                }
         except Exception:
             continue
     return None
@@ -636,20 +686,23 @@ def upload_reference(init_image, dirs):
 
 
 # ---------------------------------------------------------------- 分时 + 出图
-def strata_loaded(strata):
+def llm_loaded(llm):
     try:
-        body = json.loads(get(f"{strata['base']}/health", timeout=5))
-        return bool(body.get("loaded"))
+        body = json.loads(get(llm["health_url"], timeout=5))
+        return bool(body.get(llm.get("loaded_field", "loaded")))
     except Exception:
         return False
 
 
-def strata_action(strata, action, retries=30, wait=2.0):
-    url = f"{strata['base']}/v1/{action}"
+def llm_action(llm, action, retries=30, wait=2.0):
+    url = llm.get(f"{action}_url")
+    body = llm.get(f"{action}_body") or {}
+    if not url:
+        raise RuntimeError(f"服务 {llm.get('name')} 未配置 {action} 接口 URL")
     timeout = 300 if action == "load" else 30
     for _ in range(retries):
         try:
-            r = post(url, {}, timeout=timeout)
+            r = post(url, body, timeout=timeout)
         except urllib.error.HTTPError as e:
             if e.code in (409, 503):
                 time.sleep(wait)
@@ -659,7 +712,7 @@ def strata_action(strata, action, retries=30, wait=2.0):
             time.sleep(wait)
             continue
         return r
-    raise RuntimeError(f"Strata {action} 连续 busy")
+    raise RuntimeError(f"{llm.get('name')} {action} 连续 busy")
 
 
 def spawn_strata_reload(base):
@@ -695,7 +748,7 @@ def spawn_strata_reload(base):
 
 
 def generate(wf, prompt, width, height, steps, seed, out, timeout,
-             comfy_base, comfy_dir, dirs, models, strata, started_proc, unloaded=False,
+             comfy_base, comfy_dir, dirs, models, llm, started_proc, unloaded=False,
              no_reload=False):
     if seed is None:
         seed = random.randint(0, 2**31 - 1)
@@ -754,8 +807,8 @@ def generate(wf, prompt, width, height, steps, seed, out, timeout,
                 # 同步重载：部分宿主（如 DSH 插件沙箱）会终止后台子进程，
                 # 因此这里等待重载完成，保证出图后本地模型一定恢复。
                 try:
-                    strata_action(strata, "load")
-                    log(f"[info] 已重载本地模型 {strata['name']}")
+                    llm_action(llm, "load")
+                    log(f"[info] 已重载本地模型 {llm['name']}")
                 except Exception as e:
                     log(f"[critical] 本地模型重载失败，请手动重载; 原因: {e}")
 
@@ -789,19 +842,20 @@ def main():
     comfy_base = f"http://127.0.0.1:{port}"
     models = scan_models(comfy_dir)
     log("[info] 模型: " + json.dumps({k: v for k, v in models.items() if k != "all"}, ensure_ascii=False))
-    strata = detect_strata()
-    log(f"[info] 本地模型: {strata or '未发现'}")
+    services = load_services(here)
+    llm = detect_llm(services)
+    log(f"[info] 本地模型服务: {llm or '未发现（跳过显存分时）'}")
 
     # 先卸载占显存的本地模型，再启动 ComfyUI（否则 12GB 卡装不下两者）
     unloaded = False
-    if strata and strata_loaded(strata):
+    if llm and llm_loaded(llm):
         try:
-            strata_action(strata, "unload")
+            llm_action(llm, "unload")
             unloaded = True
-            log(f"[info] 已卸载本地模型 {strata['name']}")
+            log(f"[info] 已卸载本地模型 {llm['name']}")
         except Exception as e:
             raise RuntimeError(
-                f"本地模型 {strata['name']} 正在占用显存但卸载失败，已中止出图以避免显存不足(OOM)。"
+                f"本地模型 {llm['name']} 正在占用显存但卸载失败，已中止出图以避免显存不足(OOM)。"
                 f"请手动卸载或关闭本地模型后重试。原因: {e}"
             )
 
@@ -875,7 +929,7 @@ def main():
         ts = time.strftime("%Y%m%d_%H%M%S")
         out = a.out or str(pathlib.Path(workspace) / "flux_images" / f"flux_{ts}.png")
         out_path = generate(wf, a.prompt, 0, 0, steps, seed, out, a.timeout,
-                            comfy_base, comfy_dir, dirs, models, strata, started_proc,
+                            comfy_base, comfy_dir, dirs, models, llm, started_proc,
                             unloaded=unloaded, no_reload=a.no_reload)
     finally:
         if started_proc is not None and started_proc.poll() is None:
