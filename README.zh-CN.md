@@ -167,6 +167,7 @@ ComfyUI 本身**故意不**放在这里——它由 `gen.py` 负责管理。
 .
 ├── gen.py                         # 出图主脚本：探测 + 分时 + ComfyUI 调用
 ├── local_models.json              # 本地大模型服务清单（health / unload / load）
+├── reload_strata.py               # 插件触发的本地模型后台重载
 ├── flux_dev_fp8_api.json          # 文生图工作流（ComfyUI API 格式）
 ├── flux_kontext_gguf_api.json     # Kontext 参考图工作流（ComfyUI API 格式）
 ├── README.md                      # 英文文档
