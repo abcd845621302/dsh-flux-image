@@ -76,7 +76,9 @@ FLUX.1 系列模型使用各自的许可证（FLUX.1 [dev] / [kontext] dev 为**
 ## 安装
 
 1. 把 `gen.py`、`local_models.json`、`flux_dev_fp8_api.json`、`flux_kontext_gguf_api.json` 和
-   `flux-image-plugin/` 放在同一个插件目录（例如 `D:/QianWen3.8/ImagePlugin/plugin`）。
+   `flux-image-plugin/` 放在同一个插件目录（例如 `D:/ComfyUI-Plugin`，路径随意）。
+   插件会通过 `FLUX_IMAGE_PLUGIN_DIR` 环境变量、再按安装包的父目录顺序寻找 `gen.py` ——
+   因此要么设置 `FLUX_IMAGE_PLUGIN_DIR`，要么把这四个文件复制到插件包旁边。
 2. 把 `flux-image-plugin/` 安装进 DSH，两种方式任选：
    - 使用 DSH 内置插件管理器：
      ```
