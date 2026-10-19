@@ -76,7 +76,10 @@ FLUX.1 models are published under their own licenses (FLUX.1 [dev] / [kontext] d
 ## Installation
 
 1. Put `gen.py`, `local_models.json`, `flux_dev_fp8_api.json`, `flux_kontext_gguf_api.json` and the
-   `flux-image-plugin/` folder in one plugin directory, e.g. `D:/QianWen3.8/ImagePlugin/plugin`.
+   `flux-image-plugin/` folder together in one plugin directory, e.g. `D:/ComfyUI-Plugin` (any path works).
+   The plugin locates `gen.py` through the `FLUX_IMAGE_PLUGIN_DIR` environment variable and then the
+   parent folders of the installed package — so either set `FLUX_IMAGE_PLUGIN_DIR` or copy the four
+   files next to the installed plugin package.
 2. Install `flux-image-plugin/` into DSH, either with the built-in plugin manager:
 
    ```
