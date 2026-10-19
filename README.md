@@ -29,7 +29,7 @@ Everything runs **locally**: no cloud API, no telemetry, no data leaves your mac
 | **Text-to-image** | FLUX.1 Krea dev via ComfyUI (default 25 steps) |
 | **Reference-image editing** | FLUX.1 Kontext dev (GGUF or safetensors) — keeps character identity |
 | **Accelerated mode** | FLUX Turbo/Lightning LoRA, 8-step sampling (≈20% of the usual time, slight quality loss) |
-| **VRAM timesharing** | Unloads any configured local LLM (`POST /v1/unload`), renders, then reloads it in a **detached background process** so the image is returned immediately |
+| **VRAM timesharing** | Unloads any configured local LLM (`POST /v1/unload`), renders, then the plugin reloads it in the background so the image is returned first |
 | **Dynamic discovery** | Workspace, ComfyUI path/port, model files, and local-LLM endpoint are all auto-detected; environment variables can override |
 | **Automatic UI** | Opens the ComfyUI page on first use (window-title detection + 20-minute throttle), closes the ComfyUI it started to free VRAM |
 | **Clean lifecycle** | Never leaves stray ComfyUI processes; optionally shows the ComfyUI console window for progress logs |
@@ -51,7 +51,7 @@ Model call: generate_image(prompt, image?, accelerate?, size?, steps?, seed?)
     5. start ComfyUI if not running (writable dirs redirected into the workspace)
     6. submit the workflow, poll /history, download the PNG to <workspace>/flux_images/
     7. /free ComfyUI → kill the ComfyUI it started
-    8. spawn a detached background process that calls POST /v1/load (does not block the result)
+    8. the plugin (index.js) starts reload_strata.py which calls POST /v1/load — the image returns first and the LLM recovers in the background
         │
         ▼
   Returns the absolute path of the saved PNG
@@ -188,7 +188,7 @@ ComfyUI itself is intentionally **not** listed here — it is managed by `gen.py
 |---|---|
 | `ComfyUI 启动超时` / `Cannot connect to ComfyUI` | Check `COMFYUI_DIR`; make sure `python_embeded\python.exe` exists |
 | HTTP 400 `prompt_outputs_failed_validation` | The workflow references a model that is not in ComfyUI `models/` — check the model files |
-| Local LLM stays unloaded after rendering | The background reload failed; call `POST http://127.0.0.1:8085/v1/load` manually |
+| Local LLM stays unloaded after rendering | The plugin-triggered reload failed; check that `reload_strata.py` can run, or call `POST http://127.0.0.1:8085/v1/load` manually |
 | Browser page opens too often | It opens at most once per 20 minutes and only when no ComfyUI browser window is detected; set/clear `FLUX_OPEN_UI` if needed |
 | No console window visible | The ComfyUI console window appears per render and closes when rendering ends |
 
