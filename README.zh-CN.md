@@ -4,6 +4,8 @@
 
 [English](README.md) | [MIT 许可证](LICENSE)
 
+![Preview](docs/preview.png)
+
 ---
 
 ## 简介
