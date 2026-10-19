@@ -40,6 +40,7 @@ const WORKSPACE = findPluginRoot();
 const GEN_PY = join(WORKSPACE, 'gen.py');
 const WORKFLOW = join(WORKSPACE, 'flux_dev_fp8_api.json');
 const WORKFLOW_KONTEXT = join(WORKSPACE, 'flux_kontext_gguf_api.json');
+const RELOAD_SCRIPT = join(WORKSPACE, 'reload_strata.py');
 
 // Python launcher. gen.py uses only the stdlib, so any Python 3 works. The
 // Windows `py` launcher is used by default; override via FLUX_IMAGE_PY.
@@ -154,6 +155,7 @@ export function apply(ctx, _config = {}) {
         '--workflow-kontext', WORKFLOW_KONTEXT,
         '--size', size,
         '--timeout', String(RENDER_TIMEOUT_S),
+        '--no-reload',
       ];
       if (steps > 0) argv.push('--steps', String(steps));
       if (image) argv.push('--init-image', image);
@@ -174,6 +176,10 @@ export function apply(ctx, _config = {}) {
       }
 
       const path = stdout.trim().split(/\r?\n/).pop()?.trim() || '';
+      // The render is done: reload the local LLM from this long-lived DSH process.
+      // gen.py was called with --no-reload because detached children of gen.py can be
+      // killed by host sandboxes, while a child of the plugin process survives.
+      triggerLocalReload();
       const result = { path, size, mode };
       if (steps > 0) {
         result.steps = steps;
@@ -184,6 +190,21 @@ export function apply(ctx, _config = {}) {
       return result;
     },
   });
+}
+
+function triggerLocalReload() {
+  try {
+    if (!existsSync(RELOAD_SCRIPT)) {
+      return;
+    }
+    const child = spawnHidden(PY, [RELOAD_SCRIPT], {
+      cwd: WORKSPACE,
+      stdio: 'ignore',
+    });
+    child.unref?.();
+  } catch {
+    // Best effort: the generated image is already saved and returned.
+  }
 }
 
 function extractCritical(stdout) {
