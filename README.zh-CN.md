@@ -9,6 +9,8 @@
 
 [English](README.md) | [MIT 许可证](LICENSE) | [贡献指南](CONTRIBUTING.md)
 
+![Preview](docs/preview.png)
+
 ---
 
 ## 简介
